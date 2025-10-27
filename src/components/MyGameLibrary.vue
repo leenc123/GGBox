@@ -5,7 +5,6 @@
             <img :src="item.pic" />
             <span>{{ item.name }}</span>
         </div>
-        <div class="scale-on-hover">鼠标悬停我试试</div>
     </div>
 
 </template>
@@ -15,15 +14,6 @@ const props = defineProps({
     data: {
         type: Object,
         required: true
-    },
-    size: {
-        type: String,
-        default: 'medium',
-        validator: (value) => ['small', 'medium', 'large'].includes(value)
-    },
-    selected: {
-        type: Boolean,
-        default: false
     }
 })
 </script>

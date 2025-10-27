@@ -6,7 +6,8 @@
     <div v-for="item in titleMenu" :key="item.id" class="menu" @click="selectedId = item.id">
       <CommonText :text="item.title" :size="TextSize.LARGE" :selected="selectedId == item.id"  />
     </div>
-    <GameLibrary :data="gameLibrary"></GameLibrary>
+    <MyGameLibrary :data="gameLibrary" v-if="selectedId == 0"></MyGameLibrary>
+    <GameLibraray v-else  :height="windowHeight">{{ windowHeight }}</GameLibraray>
   </div>
 </template>
 
@@ -14,7 +15,8 @@
 import CommonText from '../components/text/CommonText.vue';
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { TextSize } from '../components/text/constants';
-import GameLibrary from '../components/GameLibrary.vue';
+import MyGameLibrary from '../components/MyGameLibrary.vue';
+import GameLibraray from '../components/GameLibraray.vue';
 
 
 const windowHeight = ref(window.innerHeight)
