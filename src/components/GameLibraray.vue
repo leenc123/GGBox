@@ -1,8 +1,8 @@
 <template>
-    <div class="grid-fixed" :style="{ maxHeight: mainHeight, overflow: 'auto' }">
-        <div v-for="item in users" :key="item.id" class="content">
+    <div class="grid-fixed" :style="{ maxHeight: mainHeight, overflow: 'auto' }" ref="containerRef">
+        <div v-for="item in games" :key="item.id" class="content">
             <img :src="item.pic"></img>
-            <span class="title-overlay">{{item.name}}</span>
+            <span class="title-overlay">{{ item.name }}</span>
         </div>
     </div>
 </template>
@@ -10,6 +10,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import initSqlJs from 'sql.js'
+import { debounce } from 'lodash'
 let pyodide = null
 let db = null
 // 初始化数据库
@@ -19,7 +20,7 @@ const initDatabase = async () => {
             locateFile: file => `https://sql.js.org/dist/${file}`
         })
         // 直接从 data 目录加载
-        const response = await fetch('./data/ggbox.db');
+        const response = await fetch('https://raw.githubusercontent.com/leenc123/GGBox/main/ggbox.db');
         if (!response.ok) throw new Error('数据库文件未找到');
 
         const arrayBuffer = await response.arrayBuffer();
@@ -36,11 +37,14 @@ const initDatabase = async () => {
 // 分页状态
 const pagination = ref({
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 40,
     total: 0,
     totalPages: 0
 })
 onMounted(async () => {
+    if (containerRef.value) {
+        containerRef.value.addEventListener('scroll', handleScroll)
+    }
     await initDatabase()
     getGames()
     try {
@@ -62,9 +66,25 @@ print('12333')
         console.log(`Pyodide 初始化失败: ${e.message}`)
     }
 })
-const users = ref([])
+onUnmounted(() => {
+    if (containerRef.value) {
+        containerRef.value.removeEventListener('scroll', handleScroll)
+    }
+})
+const containerRef = ref(null)
+const loading = ref(false)
+const hasMore = ref(true)
+const handleScroll = debounce(() => {
+    if (!containerRef.value) return
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.value
+    if (scrollTop + clientHeight >= scrollHeight - 30 && !loading.value && hasMore.value) {
+        getGames(pagination.value.currentPage + 1)
+    }
+}, 200) // 200ms 防抖延迟
+const games = ref([])
 const getGames = (page = 1) => {
     if (!db) return
+    loading.value = true
     // 更新当前页码
     pagination.value.currentPage = page
 
@@ -74,19 +94,33 @@ const getGames = (page = 1) => {
     // 获取总数
     const countResult = db.exec('SELECT COUNT(*) as total FROM games')
     const total = countResult[0]?.values[0][0] || 0
+    hasMore.value = total / pagination.value.pageSize >= page
+    console.log(`totalNum${total}`)
+    console.log(`totalSize${total / pagination.value.pageSize}`)
     const result = db.exec(`SELECT * FROM games LIMIT ${pagination.value.pageSize} 
     OFFSET ${offset}`)
+    loading.value = false
     if (result.length > 0) {
         const columns = result[0].columns
         const values = result[0].values
-
-        users.value = values.map(row => {
-            const games = {}
-            columns.forEach((col, index) => {
-                games[col] = row[index]
+        if (pagination.value.currentPage == 1) {
+            games.value = values.map(row => {
+                const games = {}
+                columns.forEach((col, index) => {
+                    games[col] = row[index]
+                })
+                return games
             })
-            return games
-        })
+        } else {
+            games.value = [...games.value, ...values.map(row => {
+                const games = {}
+                columns.forEach((col, index) => {
+                    games[col] = row[index]
+                })
+                return games
+            })]
+        }
+
     }
 }
 const props = defineProps({

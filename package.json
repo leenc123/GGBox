@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "particles.js": "^2.0.0",
     "pyodide": "^0.29.0",
     "sql.js": "^1.13.0",
