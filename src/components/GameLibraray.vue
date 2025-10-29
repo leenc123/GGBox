@@ -1,6 +1,6 @@
 <template>
     <div class="grid-fixed" :style="{ maxHeight: mainHeight, overflow: 'auto' }" ref="containerRef">
-        <div v-for="item in games" :key="item.id" class="content">
+        <div v-for="item in games" :key="item.id" class="content" @click="goDetail(item.href)">
             <img :src="item.pic"></img>
             <span class="title-overlay">{{ item.name }}</span>
         </div>
@@ -11,7 +11,8 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import initSqlJs from 'sql.js'
 import { debounce } from 'lodash'
-let pyodide = null
+import { useRouter } from 'vue-router'
+const router = useRouter()
 let db = null
 // 初始化数据库
 const initDatabase = async () => {
@@ -47,24 +48,6 @@ onMounted(async () => {
     }
     await initDatabase()
     getGames()
-    try {
-        // 动态导入 Pyodide
-        pyodide = await loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/"
-        })
-        // 安装必要的包
-        await pyodide.loadPackage(['micropip'])
-        const micropip = pyodide.pyimport('micropip')
-        await micropip.install(['requests', 'beautifulsoup4'])
-        console.log('Pyodide 初始化完成');
-        await pyodide.runPythonAsync(`
-import micropip
-await micropip.install('requests')
-print('12333')
-`)
-    } catch (e) {
-        console.log(`Pyodide 初始化失败: ${e.message}`)
-    }
 })
 onUnmounted(() => {
     if (containerRef.value) {
@@ -81,6 +64,14 @@ const handleScroll = debounce(() => {
         getGames(pagination.value.currentPage + 1)
     }
 }, 200) // 200ms 防抖延迟
+const goDetail = (url) => {
+    console.log(url)
+    router.push({
+        name: 'Detail',
+        params: { url: url },
+        query: { timestamp: Date.now() }
+    })
+}
 const games = ref([])
 const getGames = (page = 1) => {
     if (!db) return
@@ -137,7 +128,7 @@ const mainHeight = computed(() => {
 
 <style lang="scss" scoped>
 .grid-fixed {
-    margin-top: 10px;
+    padding-top: 10px;
     padding-inline: 10px;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -145,14 +136,14 @@ const mainHeight = computed(() => {
     gap: 15px;
 
     .content {
+        transform-origin: center;
+        transition: transform 0.5s ease;
         position: relative;
+        transform: scale(1);
         overflow: hidden;
         aspect-ratio: 1 / 1;
         width: 100%;
-        /* 宽度占满网格单元格 */
         height: auto;
-        /* 高度根据宽高比自动计算 */
-        background-color: aqua;
 
         img {
             object-fit: cover;
@@ -172,6 +163,11 @@ const mainHeight = computed(() => {
             font-size: 14px;
             z-index: 2;
         }
+    }
+
+    .content:hover {
+        cursor: pointer;
+        transform: scale(1.05);
     }
 }
 </style>

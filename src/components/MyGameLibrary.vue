@@ -1,7 +1,7 @@
 <template>
     <div class="container">
-        <div v-for="item in data" :key="item.id" class="content">
-
+        <div v-for="item in data" :key="item.id" class="content" @mouseenter="handleMouseEnter(item)"
+            @mouseleave="handleMouseLeave">
             <img :src="item.pic" />
             <span>{{ item.name }}</span>
         </div>
@@ -16,6 +16,13 @@ const props = defineProps({
         required: true
     }
 })
+const emit = defineEmits(['mouse-message'])
+const handleMouseEnter = (item) => {
+    emit('mouse-message', item.pic)
+}
+const handleMouseLeave = () => {
+    emit('mouse-message', '')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -23,9 +30,12 @@ const props = defineProps({
 .container::-webkit-scrollbar {
     display: none;
 }
+
 .container {
-     scrollbar-width: none; /* Firefox隐藏滚动条 */
-    -ms-overflow-style: none; /* IE和Edge隐藏滚动条 */
+    scrollbar-width: none;
+    /* Firefox隐藏滚动条 */
+    -ms-overflow-style: none;
+    /* IE和Edge隐藏滚动条 */
     height: 180px;
     padding-top: 10px;
     overflow-x: auto;
@@ -45,6 +55,11 @@ const props = defineProps({
         display: inline-block;
 
         img {
+            object-fit: cover;
+            padding: 3px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0);
+            margin: auto;
             transform-origin: left top;
             transition: all 0.5s ease;
             display: inline-block;
@@ -73,12 +88,17 @@ const props = defineProps({
         }
 
         img:hover+span {
+
             opacity: 1;
             /* 鼠标悬停时显示 */
             /* 鼠标悬停时显示 */
         }
 
         img:hover {
+            padding: 3px;
+            border-radius: 15px;
+            border: 2px solid white;
+            margin: auto;
             width: 140px;
             height: 140px;
         }
